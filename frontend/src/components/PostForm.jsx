@@ -29,6 +29,64 @@ const PostForm = () => {
     fetchPosts()
 
   }, [])
+
+  const onCreate = async () => {
+    if (!title.trim()) return
+    try {
+      setLoading(true)
+      await axios.post(`${API}/api/posts`, { title, content })
+      setTitle('')
+      setContent('')
+      await fetchPosts()
+
+    } catch (error) {
+      alert("등록 실패")
+    } finally {
+      setLoading(false)
+    }
+
+  }
+
+
+  const onUpdate = async (post) => {
+    const id = post._id ?? post.id
+    const nextTitle = prompt('새 제목', post.title ?? '')
+    if (nextTitle == null) return
+    const nextContent = prompt('새 내용', post.content ?? '')
+    if (nextContent == null) return
+
+    try {
+      setLoading(true)
+      await axios.put(`${API}/api/posts/${id}`,
+        {
+          ...post,
+          title: nextTitle.trim(),
+          content: nextContent.trim()
+        }
+      )
+      await fetchPosts()
+    } catch (error) {
+      alert('수정 실패')
+    } finally {
+      setLoading(false)
+    }
+  }
+  const onDelete = async (id) => {
+
+    if (!confirm('정말 삭제할까요?')) return
+
+
+    try {
+      setLoading(true)
+      await axios.delete(`${API}/api/posts/${id}`)
+      await fetchPosts()
+    } catch (error) {
+      alert('삭제 실패')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className='post-wrap'>
       <h2>Posts</h2>
@@ -40,6 +98,24 @@ const PostForm = () => {
           <button className="btn">새로고침</button>
         </div>
       </div>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          type="text"
+          placeholder='제목을 입력하세요' />
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder='내용을 입력하세요'
+          rows={3}></textarea>
+        <div className="post-buttons">
+          <button className="btn" onClick={onCreate} disabled={loading}>등록</button>
+          <button className="btn refresh" disabled={loading}>새로고침</button>
+        </div>
+      </div>
+
+      {loading && <p>불러오는 중....</p>}
+      {err && <p>{err}</p>}
       <ul className='post-list'>
         {posts.map((post) => (
           <li key={post._id}>
@@ -49,8 +125,11 @@ const PostForm = () => {
             <p>
               {post.content}
             </p>
+
             <button className="update btn">수정</button>
             <button className="delete btn">수정</button>
+            <button className="update btn" onClick={() => onUpdate(post)}>수정</button>
+            <button className="delete btn" onClick={() => onDelete(post._id)}>삭제</button>
           </li>
         ))}
       </ul>
